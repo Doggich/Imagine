@@ -1,32 +1,37 @@
 import time
 import pygame as pg
 from PIL import Image
+from typing import Tuple, List, LiteralString
+import numpy.typing as npt
 import numpy as np
 import argparse
 import os
 
 
-def clear_terminal():
-    print("\033[H", end='')
+def clear_terminal() -> None:
+    print("\033[H", end="")
+
+
+def remove_cursor() -> None:
+    print("\033[?25l")
 
 
 def ascii_pixel(r: int, g: int, b: int, sign: str = " ") -> str:
     return f"\033[48;2;{r};{g};{b}m {sign} \033[0m"
 
 
-def compress_image_in_memory(image: Image.Image, max_size) -> Image.Image:
-    image.thumbnail(max_size)
-    return image
+def compress_image_in_memory(image: Image, max_size: Tuple[int, int] = (64, 64)) -> Image.Image:
+    return image.thumbnail(max_size)
 
 
 def PrintImg2Terminal(image: Image.Image) -> str or None:
-    term_picture: str = ""
+    term_picture: LiteralString = ""
 
     if image is None:
         print("Invalid image provided.")
         return None
 
-    img_array = np.array(image.convert("RGB"))
+    img_array: npt.NDArray[np.uint8] = np.array(image.convert("RGB"))
 
     for row in img_array:
         term_picture += ''.join(ascii_pixel(r, g, b) for r, g, b in row) + "\n"
@@ -34,8 +39,8 @@ def PrintImg2Terminal(image: Image.Image) -> str or None:
     return term_picture
 
 
-def PrintGIF2Terminal(gif_path: str, max_size=(64, 64)) -> list[str] or None:
-    frames = []
+def PrintGIF2Terminal(gif_path: str, max_size: Tuple[int, int] = (64, 64)) -> list[str] or None:
+    frames: List[LiteralString] = []
 
     if not os.path.exists(gif_path):
         print(f"File not found: {gif_path}")
@@ -45,11 +50,11 @@ def PrintGIF2Terminal(gif_path: str, max_size=(64, 64)) -> list[str] or None:
         try:
             while True:
 
-                frame = gif.copy()
+                frame: Image.Image = gif.copy()
 
-                compressed_frame = compress_image_in_memory(frame, max_size)
+                compressed_frame: Image.Image = compress_image_in_memory(frame, max_size)
 
-                terminal_representation = PrintImg2Terminal(compressed_frame)
+                terminal_representation: str | None = PrintImg2Terminal(compressed_frame)
                 if terminal_representation is not None:
                     frames.append(terminal_representation)
                 gif.seek(gif.tell() + 1)
@@ -89,6 +94,8 @@ def main() -> int:
         pg.mixer.music.load(music_path)
         pg.mixer.music.play(loops=-1)
         pg.mixer.music.set_volume(0.15)
+
+    remove_cursor()
 
     while True:
         clear_terminal()
